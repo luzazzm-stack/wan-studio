@@ -1,0 +1,32 @@
+/* ===================== home Activity panel + richer Enhance page ===================== */
+.left-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.activity { padding: 20px 24px; }
+.act-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.act-head .power-title { font: 600 15px var(--head); }
+.act-head .hint { flex: 1; min-width: 0; }
+.activity.ready .ping i, .activity.starting .ping i { background: var(--accent); }
+.activity.ready .ping i:first-child, .activity.starting .ping i:first-child { animation: ping 1.6s cubic-bezier(0,0,.2,1) infinite; }
+.activity.error .ping i { background: var(--bad); }
+.activity .mini-queue { margin-top: 14px; }
+.recent-head { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0 10px; font-size: 14px; }
+.recent-head b { font: 600 14px var(--head); }
+.recent { display: flex; gap: 10px; align-items: flex-end; }
+.rthumb { position: relative; height: 92px; flex: 0 1 auto; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; padding: 0; background: #0b0b0d; cursor: pointer; transition: border-color .3s, transform .3s var(--ease); }
+.rthumb:hover { border-color: var(--line-2); transform: translateY(-2px); }
+.rthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rthumb .tag { position: absolute; left: 6px; top: 6px; background: rgba(0,0,0,.55); color: #fff; font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
+
+.vlist { display: grid; gap: 8px; margin-top: 14px; }
+.vrow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r); border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; transition: border-color .3s, background-color .3s; }
+.vrow:hover { border-color: var(--line-2); }
+.vrow.on { border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: var(--accent-soft); }
+.vrow.skip .vrow-out { color: var(--warn); }
+.vrow-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vrow-main b { font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vrow-out { font-size: 12.5px; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
+#vAddMore { margin-top: 12px; }
+.enh-size { margin: 10px 0 2px; }
+.enh-size button { flex-direction: column; gap: 0; padding: 8px 6px; line-height: 1.25; }
+.enh-size small { font-size: 11px; opacity: .7; font-weight: 400; }
+.enh-size.off { opacity: .35; pointer-events: none; }
+@media (max-width: 760px) { .rthumb { height: 72px; } .vrow { flex-wrap: wrap; } .vrow-out { text-align: left; } }

@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-nav="d">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wan Studio</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<meta name="theme-color" content="#000000">
+</head>
+<body>
+
+
+<nav class="island" id="nav" aria-label="Sections">
+  <a href="#create" data-page="create" title="Create" class="active"><iconify-icon icon="solar:magic-stick-3-linear" aria-hidden="true"></iconify-icon><b>Create</b></a>
+  <a href="#templates" data-page="templates" title="Templates"><iconify-icon icon="solar:widget-5-linear" aria-hidden="true"></iconify-icon><b>Templates</b></a>
+  <a href="#animate" data-page="animate" title="Animate a character"><iconify-icon icon="solar:running-round-linear" aria-hidden="true"></iconify-icon><b>Animate</b></a>
+  <a href="#enhance" data-page="enhance" title="Enhance a video"><iconify-icon icon="solar:maximize-square-linear" aria-hidden="true"></iconify-icon><b>Enhance</b></a>
+  <a href="#gallery" data-page="gallery" title="My videos"><iconify-icon icon="solar:videocamera-record-linear" aria-hidden="true"></iconify-icon><b>My videos</b></a>
+  <a href="#queue" data-page="queue" title="Queue"><iconify-icon icon="solar:layers-minimalistic-linear" aria-hidden="true"></iconify-icon><b>Queue</b><i class="badge hidden" id="queueBadge">0</i></a>
+  <a href="#help" data-page="help" title="Prompt lab"><iconify-icon icon="solar:test-tube-minimalistic-linear" aria-hidden="true"></iconify-icon><b>Lab</b></a>
+  <a href="#settings" data-page="settings" title="Settings"><iconify-icon icon="solar:settings-linear" aria-hidden="true"></iconify-icon><b>Settings</b></a>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <button class="dock-power" id="dockPower" role="switch" aria-checked="false" aria-label="Turn the Kaggle server on or off" title="Server on / off"><span class="ping" aria-hidden="true"><i></i><i></i></span><iconify-icon icon="solar:power-linear" aria-hidden="true"></iconify-icon></button>
+</nav>
+
+<main id="main">
+<a class="logo" href="#create" data-page="create" aria-label="Wan Studio home">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+  <span>Wan Studio</span>
+</a>
+<!-- ============================== CREATE -->
+<section class="page active" id="page-create">
+  <div class="create-grid">
+    <div class="left-col">
+    <div class="glass panel compose">
+      <div class="seg" id="modeSeg" role="tablist" aria-label="Start from">
+        <button data-mode="t2v" class="on" role="tab"><iconify-icon icon="solar:pen-new-square-linear" aria-hidden="true"></iconify-icon>From words</button>
+        <button data-mode="i2v" role="tab"><iconify-icon icon="solar:gallery-wide-linear" aria-hidden="true"></iconify-icon>From a photo</button>
+      </div>
+
+      <div class="drop hidden" id="drop" role="button" tabindex="0" aria-label="Choose a photo">
+        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" hidden>
+        <div class="drop-empty" id="dropEmpty"><iconify-icon icon="solar:upload-minimalistic-linear" class="drop-icon" aria-hidden="true"></iconify-icon><b>Drop a photo here</b><span>or click to choose one (PNG, JPG or WEBP)</span></div>
+        <div class="drop-full hidden" id="dropFull"><img id="dropImg" alt="The photo that will be animated" width="640" height="360"><button class="btn small glass-btn" id="dropClear">Change photo</button></div>
+      </div>
+
+      <label class="lbl" for="prompt">Describe your video <span class="hint" id="wordCount">0 words</span></label>
+      <textarea id="prompt" name="prompt" rows="5" autocomplete="off" placeholder="A trekker walks along a Himalayan ridge lined with prayer flags, golden sunrise light, the camera follows slowly from the side…"></textarea>
+      <div class="strength" id="strength"><div class="strength-bar"><i id="strengthFill"></i></div><span id="strengthText">Start typing…</span></div>
+      <div class="tips" id="tips"></div>
+      <div class="improve-opts hidden" id="improveOpts" aria-live="polite"></div>
+
+      <div class="row tools">
+        <button class="btn glass-btn" id="improveBtn"><iconify-icon icon="solar:magic-stick-3-linear" aria-hidden="true"></iconify-icon><span>Improve my prompt</span></button>
+        <button class="btn glass-btn hidden" id="motionBtn"><iconify-icon icon="solar:eye-scan-linear" aria-hidden="true"></iconify-icon><span>Suggest motion</span></button>
+        <button class="btn glass-btn" id="builderBtn"><iconify-icon icon="solar:widget-add-linear" aria-hidden="true"></iconify-icon>Prompt builder</button>
+        <button class="btn glass-btn" id="surpriseBtn"><iconify-icon icon="solar:shuffle-linear" aria-hidden="true"></iconify-icon>Surprise me</button>
+        <button class="btn ghost" id="clearBtn">Clear</button>
+      </div>
+
+      <div class="go">
+        <div class="estimate" id="estimate" aria-live="polite"></div>
+        <button class="btn primary big" id="generateBtn">Generate video<iconify-icon icon="solar:arrow-right-linear" aria-hidden="true"></iconify-icon></button>
+      </div>
+    </div>
+
+    <section class="glass panel activity" id="activity" aria-label="Activity">
+      <div class="act-head">
+        <div class="power-title"><span class="ping" aria-hidden="true"><i></i><i></i></span><span id="homeStatus">Server off</span></div>
+        <span class="hint" id="homeSub"></span>
+        <button class="btn small glass-btn" id="homePower">Turn on</button>
+      </div>
+      <div class="mini-queue" id="miniQueue"></div>
+      <div class="recent-head"><b>Recent videos</b><a class="link" href="#gallery" data-goto="gallery">All videos</a></div>
+      <div class="recent" id="homeRecent"></div>
+    </section>
+    </div>
+
+    <div class="right-col">
+    <div class="glass panel settings-panel">
+      <h2>Settings</h2>
+      <div class="lbl first">Shape</div>
+      <div class="aspects" id="aspects" role="radiogroup" aria-label="Shape">
+        <button data-a="16:9" class="on" role="radio"><i class="shape s169"></i><b>16:9</b><span>YouTube, website</span></button>
+        <button data-a="9:16" role="radio"><i class="shape s916"></i><b>9:16</b><span>Reels, TikTok</span></button>
+        <button data-a="1:1" role="radio"><i class="shape s11"></i><b>1:1</b><span>Instagram post</span></button>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <label class="lbl" for="seconds">Length <span class="hint accent" id="secLabel">5 s</span></label>
+          <input type="range" id="seconds" min="2" max="5" step="1" value="5">
+          <div class="scale" aria-hidden="true"><span>2 s</span><span>3 s</span><span>4 s</span><span>5 s</span></div>
+        </div>
+        <div>
+          <div class="lbl">Quality</div>
+          <div class="seg small" id="qualitySeg" role="radiogroup" aria-label="Quality">
+            <button data-q="turbo" role="radio"><iconify-icon icon="solar:bolt-linear" aria-hidden="true"></iconify-icon>Turbo</button>
+            <button data-q="standard" class="on" role="radio">Standard</button>
+            <button data-q="high" role="radio">High</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lbl">Resolution <span class="hint" id="resHint">720p is what Wan makes</span></div>
+      <div class="seg" id="resSeg" role="radiogroup" aria-label="Resolution">
+        <button data-r="720" class="on" role="radio">720p</button>
+        <button data-r="1080" role="radio"><iconify-icon icon="solar:maximize-square-linear" aria-hidden="true"></iconify-icon>1080p upscaled</button>
+        <button data-r="1080s" role="radio"><iconify-icon icon="solar:stars-minimalistic-linear" aria-hidden="true"></iconify-icon>1080p + smooth 48 fps</button>
+      </div>
+
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="twoVersions" name="two"><span class="track"><i></i></span><span class="toggle-text">Make 2 versions<em>one on each GPU, keep the better one</em></span></label>
+        <label class="toggle"><input type="checkbox" id="notifyDone" name="notify" checked><span class="track"><i></i></span><span class="toggle-text">Tell me when it's done<em>a notification when the video is saved</em></span></label>
+      </div>
+
+      <details class="adv">
+        <summary><iconify-icon icon="solar:tuning-2-linear" aria-hidden="true"></iconify-icon>Advanced</summary>
+        <div class="two-col">
+          <div>
+            <label class="lbl" for="seed">Seed <span class="hint">same seed + prompt = same video</span></label>
+            <div class="row"><input type="number" id="seed" name="seed" inputmode="numeric" autocomplete="off" placeholder="Random…" min="0"><button class="btn small glass-btn" id="diceBtn" aria-label="Pick a random seed"><iconify-icon icon="solar:shuffle-linear" aria-hidden="true"></iconify-icon></button><button class="btn small ghost" id="seedClear">Random</button></div>
+          </div>
+          <div>
+            <label class="lbl" for="cfg">Follow the prompt <span class="hint accent" id="cfgLabel">5.0</span></label>
+            <input type="range" id="cfg" min="2" max="9" step="0.5" value="5">
+          </div>
+        </div>
+        <label class="lbl" for="negative">Things to avoid <span class="hint">already filled with the recommended list</span></label>
+        <textarea id="negative" name="negative" rows="3" autocomplete="off"></textarea>
+        <div class="row"><button class="btn small ghost" id="negReset">Reset to recommended</button><span class="hint" id="negMeaning"></span></div>
+      </details>
+
+    </div>
+
+    <section class="glass panel pictures" id="picCard" aria-label="Pictures">
+      <div class="pics-head">
+        <h2><iconify-icon icon="solar:gallery-add-linear" aria-hidden="true"></iconify-icon>Pictures</h2>
+        <span class="hint">Free, made with NVIDIA FLUX</span>
+      </div>
+      <p class="hint">Make a picture, then press <b>Animate</b> to turn it into a video. Starting from a picture gives you more control over how the video looks.</p>
+      <textarea id="picPrompt" rows="3" autocomplete="off" placeholder="Describe the picture: e.g. a cozy coffee shop counter with a latte, morning sunlight through the window" aria-label="Describe the picture"></textarea>
+      <div class="row pics-actions">
+        <button class="btn small ghost" id="picFromPrompt">Use my video prompt</button>
+        <span class="hint" id="picShape"></span>
+        <button class="btn primary" id="picMake"><iconify-icon icon="solar:magic-stick-3-linear" aria-hidden="true"></iconify-icon><span>Make 2 pictures</span></button>
+      </div>
+      <div class="pic-grid" id="picGrid" aria-live="polite"></div>
+    </section>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================== TEMPLATES -->
+<section class="page" id="page-templates">
+  <div class="page-head">
+    <div>
+      <span class="badge-pill"><iconify-icon icon="solar:gallery-wide-linear" aria-hidden="true"></iconify-icon>51 ready prompts</span>
+      <h1>Templates</h1>
+      <p>Tap a card to use it, or make it straight away.</p>
+    </div>
+    <div class="row head-tools"><div class="search"><iconify-icon icon="solar:magnifer-linear" aria-hidden="true"></iconify-icon><input type="search" id="tplSearch" name="tplsearch" aria-label="Search templates" autocomplete="off" placeholder="Search, e.g. Pokhara…"></div><button class="btn glass-btn" id="makeDemosBtn">Make missing demos</button></div>
+  </div>
+  <div class="chips" id="tplCats" role="tablist" aria-label="Categories"></div>
+  <div class="grid" id="tplGrid"></div>
+</section>
+
+<!-- ============================== ENHANCE -->
+<section class="page" id="page-animate">
+  <div class="page-head"><div><h1>Animate a character</h1><p>Your character copies the moves of any video. Runs on its own GPU.</p></div></div>
+  <div class="enhance-grid">
+    <div class="glass panel">
+      <div class="anim-drops">
+        <div class="drop" id="aImgDrop" role="button" tabindex="0" aria-label="Choose the character photo">
+          <input type="file" id="aImgFile" accept="image/png,image/jpeg,image/webp" hidden>
+          <div class="drop-empty" id="aImgEmpty"><iconify-icon icon="solar:user-rounded-linear" class="drop-icon" aria-hidden="true"></iconify-icon><b>1. Character photo</b><span>A clear, full-body photo works best</span></div>
+          <div class="drop-full hidden" id="aImgFull"><img id="aImgPrev" alt="Character photo"></div>
+        </div>
+        <div class="drop" id="aVidDrop" role="button" tabindex="0" aria-label="Choose the motion video">
+          <input type="file" id="aVidFile" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.mkv" hidden>
+          <div class="drop-empty" id="aVidEmpty"><iconify-icon icon="solar:videocamera-record-linear" class="drop-icon" aria-hidden="true"></iconify-icon><b>2. Motion video</b><span>Someone dancing, walking, talking… (first 5 s are used)</span></div>
+          <div class="drop-full hidden" id="aVidFull"><video id="aVidPrev" muted loop playsinline autoplay></video></div>
+        </div>
+      </div>
+      <label class="lbl" for="aPrompt">Describe the scene <span class="hint">optional</span></label>
+      <textarea id="aPrompt" rows="3" placeholder="Example: a smiling trekking guide with a big mustache dancing on a mountain ridge, sunny day"></textarea>
+    </div>
+    <div class="glass panel">
+      <h2>Settings</h2>
+      <div class="lbl">Shape</div>
+      <div class="seg small" id="aShape" role="radiogroup" aria-label="Shape">
+        <button data-a="9:16" class="on" role="radio">Portrait<small>Reels · 480×832</small></button>
+        <button data-a="16:9" role="radio">Landscape<small>832×480</small></button>
+        <button data-a="1:1" role="radio">Square<small>640×640</small></button>
+      </div>
+      <div class="lbl">Length</div>
+      <div class="seg small" id="aLen" role="radiogroup" aria-label="Length">
+        <button data-s="3" role="radio">3 seconds<small>faster</small></button>
+        <button data-s="5" class="on" role="radio">5 seconds<small>uses more GPU time</small></button>
+      </div>
+      <div class="go">
+        <div class="estimate" id="aEstimate" aria-live="polite">Choose a photo and a video.</div>
+        <button class="btn primary big" id="aBtn" disabled>Animate<iconify-icon icon="solar:arrow-right-linear" aria-hidden="true"></iconify-icon></button>
+      </div>
+      <p class="hint">Runs on GPU 2 (GPU 1 keeps making normal videos). The motion video's sound is kept. Results appear in My videos.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="page-enhance">
+  <div class="page-head"><div><h1>Enhance your videos</h1></div></div>
+  <div class="enhance-grid">
+    <div class="glass panel">
+      <div class="drop vdrop" id="vdrop" role="button" tabindex="0" aria-label="Choose videos to enhance">
+        <input type="file" id="vfile" multiple accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.webm,.mkv" hidden>
+        <div class="drop-empty" id="vdropEmpty"><iconify-icon icon="solar:upload-minimalistic-linear" class="drop-icon" aria-hidden="true"></iconify-icon><b>Drop your videos here</b><span>or click to choose. MP4, MOV or WEBM, up to 60 seconds each. You can add several.</span></div>
+        <div class="drop-full hidden" id="vdropFull"><video id="vPreview" controls muted playsinline></video></div>
+      </div>
+      <div class="vlist" id="vlist"></div>
+      <button class="btn small glass-btn hidden" id="vAddMore"><iconify-icon icon="solar:add-circle-linear" aria-hidden="true"></iconify-icon>Add more videos</button>
+    </div>
+    <div class="glass panel">
+      <h2>What to do</h2>
+      <div class="toggles one">
+        <label class="toggle"><input type="checkbox" id="enhUp" checked><span class="track"><i></i></span><span class="toggle-text">Upscale<em id="enhUpHint">sharper and bigger, keeps the same look</em></span></label>
+      </div>
+      <div class="seg small enh-size" id="enhSize" role="radiogroup" aria-label="Output size">
+        <button data-s="1080p" class="on" role="radio">1080p<small>Full HD</small></button>
+        <button data-s="2k" role="radio">2K<small>1440p</small></button>
+        <button data-s="4k" role="radio">4K<small>slowest</small></button>
+      </div>
+      <div class="toggles one">
+        <label class="toggle"><input type="checkbox" id="enhSmooth"><span class="track"><i></i></span><span class="toggle-text">Smooth motion<em>doubles the frames (for example 24 to 48 per second)</em></span></label>
+      </div>
+      <div class="go">
+        <div class="estimate" id="enhEstimate" aria-live="polite">Choose a video first.</div>
+        <button class="btn primary big" id="enhBtn" disabled><span id="enhBtnText">Enhance video</span><iconify-icon icon="solar:arrow-right-linear" aria-hidden="true"></iconify-icon></button>
+      </div>
+      <p class="hint">Sound is kept. Results appear in My videos, where you can compare them with the original.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== GALLERY -->
+<section class="page" id="page-gallery">
+  <div class="page-head">
+    <div>
+      <span class="badge-pill"><iconify-icon icon="solar:folder-with-files-linear" aria-hidden="true"></iconify-icon>Videos\Wan Studio</span>
+      <h1>My videos</h1>
+      <p id="galCount">Saved in your Videos folder.</p>
+    </div>
+    <div class="row head-tools"><div class="search"><iconify-icon icon="solar:magnifer-linear" aria-hidden="true"></iconify-icon><input type="search" id="galSearch" name="galsearch" aria-label="Search your videos" autocomplete="off" placeholder="Search by prompt…"></div><button class="btn glass-btn local-only" id="openFolderBtn"><iconify-icon icon="solar:folder-open-linear" aria-hidden="true"></iconify-icon>Open folder</button></div>
+  </div>
+  <div class="chips" id="galFilters" role="tablist" aria-label="Filter">
+    <button data-f="all" class="on">All</button><button data-f="fav">Favourites</button><button data-f="720p">720p</button>
+    <button data-f="1080p">1080p</button><button data-f="smooth">Smooth</button><button data-f="i2v">From a photo</button>
+  </div>
+  <div class="grid" id="galGrid"></div>
+</section>
+
+<!-- ============================== QUEUE -->
+<section class="page" id="page-queue">
+  <div class="page-head">
+    <div>
+      <span class="badge-pill"><iconify-icon icon="solar:cpu-linear" aria-hidden="true"></iconify-icon>2 GPUs, 2 videos at a time</span>
+      <h1>Queue</h1>
+      <p>Waiting jobs start by themselves when the server is on.</p>
+    </div>
+    <button class="btn glass-btn" id="clearJobsBtn">Clear finished</button>
+  </div>
+  <div class="queue-grid">
+    <div id="jobList" class="job-list"></div>
+    <div class="side-col">
+    <section class="server glass" id="power" aria-label="Kaggle server">
+      <div class="server-head">
+        <div class="power-text" aria-live="polite">
+          <div class="power-title"><span class="ping" aria-hidden="true"><i></i><i></i></span><span id="powerTitle">Server off</span></div>
+          <div class="power-sub" id="powerSub">Turn on to make videos</div>
+        </div>
+        <button class="switch" id="powerSwitch" role="switch" aria-checked="false" aria-label="Kaggle GPU server"><span class="knob"></span></button>
+      </div>
+      <div class="power-bar hidden" id="powerBar"><div id="powerBarFill"></div></div>
+      <div class="server-rows" id="gpus">
+        <div class="gpu" data-g="0"><span class="gpu-label">GPU 1</span><span class="gpu-track"><i class="gpu-fill"></i></span><span class="gpu-val">off</span></div>
+        <div class="gpu" data-g="1"><span class="gpu-label">GPU 2</span><span class="gpu-track"><i class="gpu-fill"></i></span><span class="gpu-val">off</span></div>
+        <div class="gpu quota" id="quota"><span class="gpu-label">Free hours</span><span class="gpu-track"><i class="gpu-fill" id="quotaRing"></i></span><span class="gpu-val" id="quotaVal">–</span></div>
+      </div>
+    </section>
+
+    <aside class="window glass" id="previewCard" aria-label="Latest video and progress">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="chrome-title">Latest video</span><a class="link" href="#gallery" data-goto="gallery">All videos</a></div>
+      <div class="window-body">
+        <div id="previewBody" class="preview-body"><div class="empty">Your videos will appear here.<br><small>Tip: pick a template to start fast.</small></div></div>
+      </div>
+    </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== HELP -->
+<section class="page" id="page-help">
+  <div class="page-head"><div><h1>Prompt lab</h1></div></div>
+  <div class="lab">
+    <article class="glass card lab-check">
+      <h2>Check a prompt</h2>
+      <textarea id="labPrompt" rows="4" autocomplete="off" aria-label="Prompt to check" placeholder="Type or paste a prompt, e.g. a boat on Phewa Lake at dawn…"></textarea>
+      <div class="lab-score"><div class="strength-bar"><i id="labFill"></i></div><b id="labVerdict">Start typing…</b><span class="hint" id="labWords"></span></div>
+      <div class="checklist" id="labChecks"></div>
+      <div class="row end"><button class="btn ghost" id="labClear">Clear</button><button class="btn glass-btn" id="labExample">Show me a good one</button><button class="btn primary" id="labUse">Use in Create<iconify-icon icon="solar:arrow-right-linear" aria-hidden="true"></iconify-icon></button></div>
+    </article>
+
+    <article class="glass card lab-calc">
+      <h2>How long will it take?</h2>
+      <div class="lbl">Quality</div>
+      <div class="seg small" id="calcQuality"><button data-q="turbo">Turbo</button><button data-q="standard" class="on">Standard</button><button data-q="high">High</button></div>
+      <label class="lbl" for="calcSeconds">Length <span class="hint accent" id="calcSecLabel">5 s</span></label>
+      <input type="range" id="calcSeconds" min="2" max="5" step="1" value="5">
+      <label class="lbl" for="calcCount">How many videos <span class="hint accent" id="calcCountLabel">4</span></label>
+      <input type="range" id="calcCount" min="1" max="30" step="1" value="4">
+      <div class="calc-out">
+        <div><b id="calcTime">–</b><span>until all are done</span></div>
+        <div><b id="calcHours">–</b><span>of your free GPU hours</span></div>
+        <div><b id="calcLeft">–</b><span>left this week after that</span></div>
+      </div>
+      <p class="hint" id="calcNote"></p>
+    </article>
+
+    <article class="glass card lab-moves">
+      <div class="lab-moves-head"><h2>Camera moves: tap one to watch it</h2><span class="hint">Each clip was made by Wan with that move</span></div>
+      <div class="moves">
+        <div class="move-player"><video id="moveVideo" muted loop playsinline preload="none"></video><div class="move-cap"><b id="moveName"></b><span id="movePhrase"></span><button class="btn small primary" id="moveAdd">Add to my prompt</button></div></div>
+        <div class="move-list" id="moveList"></div>
+      </div>
+    </article>
+
+    <article class="glass card lab-weak">
+      <h2>Wan struggles with</h2>
+      <div class="weak" id="weakChips"></div>
+      <p class="hint" id="weakTip">Tap one to see what to do instead.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ============================== SETTINGS -->
+<section class="page" id="page-settings">
+  <div class="page-head"><div><span class="badge-pill"><iconify-icon icon="solar:settings-linear" aria-hidden="true"></iconify-icon>Preferences</span><h1>Settings</h1></div></div>
+  <div class="cards">
+    <article class="glass card">
+      <div class="card-icon"><iconify-icon icon="solar:battery-charge-linear" aria-hidden="true"></iconify-icon></div>
+      <h2>Saving GPU hours</h2>
+      <label class="lbl" for="setIdle">Turn off after no use <span class="hint accent" id="idleLabel"></span></label>
+      <input type="range" id="setIdle" min="5" max="90" step="5">
+      <label class="lbl" for="setMax">Longest session <span class="hint accent" id="maxLabel"></span></label>
+      <input type="range" id="setMax" min="1" max="12" step="1">
+      <p class="hint">The server also stops itself if this laptop is off or the app is closed.</p>
+    </article>
+    <article class="glass card">
+      <div class="card-icon"><iconify-icon icon="solar:video-frame-linear" aria-hidden="true"></iconify-icon></div>
+      <h2>Defaults for new videos</h2>
+      <label class="lbl" for="setAspect">Shape</label>
+      <select id="setAspect" name="aspect"><option>16:9</option><option>9:16</option><option>1:1</option></select>
+      <label class="lbl" for="setSeconds">Length</label>
+      <select id="setSeconds" name="seconds"><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option><option value="5">5 s</option></select>
+      <div class="lbl">Theme</div>
+      <div class="seg small" id="themeSeg"><button data-t="dark"><iconify-icon icon="solar:moon-stars-linear" aria-hidden="true"></iconify-icon>Dark</button><button data-t="light"><iconify-icon icon="solar:sun-2-linear" aria-hidden="true"></iconify-icon>Light</button></div>
+    </article>
+    <article class="glass card">
+      <div class="card-icon"><iconify-icon icon="solar:server-square-linear" aria-hidden="true"></iconify-icon></div>
+      <h2>Files and server</h2>
+      <p class="hint">Videos are saved to</p>
+      <p><code id="outDir" translate="no">–</code></p>
+      <button class="btn glass-btn local-only" id="openFolderBtn2"><iconify-icon icon="solar:folder-open-linear" aria-hidden="true"></iconify-icon>Open folder</button>
+      <div class="kv spaced" id="serverInfo"></div>
+    </article>
+    <article class="glass card span2" id="keysCard">
+      <div class="card-icon"><iconify-icon icon="solar:key-minimalistic-linear" aria-hidden="true"></iconify-icon></div>
+      <div class="keys-head"><h2>API keys</h2><button class="btn small glass-btn" id="keyAdd"><iconify-icon icon="solar:add-circle-linear" aria-hidden="true"></iconify-icon>Add a key</button></div>
+      <p class="hint">Keys stay on this laptop and are never shown in full. Only the laptop can change them, not the phone.</p>
+      <div class="key-form hidden" id="keyForm">
+        <select id="keyProvider" aria-label="Service"></select>
+        <input id="keyValue" type="password" autocomplete="off" spellcheck="false" placeholder="Paste the key…" aria-label="API key">
+        <button class="btn small primary" id="keySave">Save</button><button class="btn small ghost" id="keyCancel">Cancel</button>
+      </div>
+      <div class="key-list" id="keyList"></div>
+    </article>
+    <article class="glass card" id="phoneCard">
+      <div class="card-icon"><iconify-icon icon="solar:smartphone-linear" aria-hidden="true"></iconify-icon></div>
+      <h2>Open on your phone</h2>
+      <p class="hint">Join the same Wi-Fi, then scan the code or type the address.</p>
+      <div class="qr-row"><div id="qr" class="qr" aria-label="QR code with the phone address"></div><div><div class="lan" id="lanUrl" translate="no">–</div><div class="local-only hint">PIN <b class="pin" id="pinShow">–</b></div></div></div>
+      <div class="local-only"><label class="lbl" for="setPin">Change PIN</label><div class="row"><input id="setPin" name="pin" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="4 to 8 digits…"><button class="btn small glass-btn" id="savePin">Save PIN</button></div></div>
+    </article>
+  </div>
+</section>
+</main>
+
+<!-- Builder modal -->
+<div class="modal hidden" id="builderModal" role="dialog" aria-modal="true" aria-labelledby="builderTitle">
+  <div class="modal-card glass wide">
+    <div class="modal-head"><h2 id="builderTitle">Prompt builder</h2><button class="x" data-close aria-label="Close"><iconify-icon icon="solar:close-circle-linear" aria-hidden="true"></iconify-icon></button></div>
+    <p class="hint">Pick one from each row, or type your own. The prompt writes itself.</p>
+    <div id="builderRows"></div>
+    <div class="lbl">Your prompt</div>
+    <div class="builder-out" id="builderOut"></div>
+    <div class="row end"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="builderUse">Use this prompt</button></div>
+  </div>
+</div>
+
+<!-- Video viewer modal -->
+<div class="modal hidden" id="viewer" role="dialog" aria-modal="true" aria-labelledby="vTitle">
+  <div class="modal-card glass viewer-card">
+    <div class="modal-head"><h2 id="vTitle">Video</h2><button class="x" data-close aria-label="Close"><iconify-icon icon="solar:close-circle-linear" aria-hidden="true"></iconify-icon></button></div>
+    <div class="viewer-body">
+      <video id="vVideo" controls loop playsinline></video>
+      <div class="viewer-side">
+        <div class="tags" id="vTags"></div>
+        <p class="vprompt" id="vPrompt"></p>
+        <div class="kv" id="vMeta"></div>
+        <div class="social-kit hidden" id="vSocialBox" aria-live="polite"></div>
+        <div class="vbtns">
+          <a class="btn primary" id="vDownload" download>Download</a>
+          <button class="btn glass-btn" id="vFav">Add to favourites</button>
+          <button class="btn glass-btn" id="vReuse">Reuse settings</button>
+          <button class="btn glass-btn" id="vVariations">Make 2 variations</button>
+          <button class="btn glass-btn" id="vUpscale">Upscale to 1080p</button>
+          <button class="btn glass-btn" id="vSmooth">Smooth to 48 fps</button>
+          <button class="btn glass-btn hidden" id="vCompare">Show original</button>
+          <button class="btn glass-btn" id="vCopy">Copy prompt</button>
+          <button class="btn glass-btn" id="vSocial">Caption &amp; hashtags</button>
+          <button class="btn glass-btn danger" id="vDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal hidden" id="confirm" role="alertdialog" aria-modal="true" aria-labelledby="cTitle">
+  <div class="modal-card glass">
+    <h2 id="cTitle"></h2><p id="cText"></p>
+    <div class="row end"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="cOk">OK</button></div>
+  </div>
+</div>
+
+
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="/templates.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
