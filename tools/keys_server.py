@@ -4,7 +4,6 @@ KEY_PROVIDERS = {
     "gemini": {"label": "Gemini (paid key)", "used": "Improve my prompt (backup, max 30 a day)"},
     "nvidia": {"label": "NVIDIA", "used": "Not used yet (for extra features)"},
     "openrouter": {"label": "OpenRouter", "used": "Not used yet (for extra features)"},
-    "kaggle_luzamhjo_access_token": {"label": "Kaggle (luzamhjo)", "used": "Runs the video server. Restart the app after changing it"},
 }
 
 

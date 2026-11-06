@@ -351,6 +351,13 @@
 <section class="page" id="page-settings">
   <div class="page-head"><div><span class="badge-pill"><iconify-icon icon="solar:settings-linear" aria-hidden="true"></iconify-icon>Preferences</span><h1>Settings</h1></div></div>
   <div class="cards">
+    <article class="glass card local-only" id="accountCard">
+      <div class="card-icon"><iconify-icon icon="solar:user-circle-linear" aria-hidden="true"></iconify-icon></div>
+      <h2>Kaggle account</h2>
+      <p id="accText" class="hint">–</p>
+      <div class="row"><button class="btn glass-btn" id="signInBtn2">Sign in</button><button class="btn glass-btn danger" id="signOutBtn">Sign out</button></div>
+      <p class="hint">Videos are made on <b>your own</b> free Kaggle GPUs (about 30 hours a week). The token stays on this computer.</p>
+    </article>
     <article class="glass card">
       <div class="card-icon"><iconify-icon icon="solar:battery-charge-linear" aria-hidden="true"></iconify-icon></div>
       <h2>Saving GPU hours</h2>
@@ -437,6 +444,26 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Kaggle sign-in (first run) -->
+<div class="modal hidden" id="signin" role="dialog" aria-modal="true" aria-labelledby="siTitle">
+  <div class="modal-card glass">
+    <h2 id="siTitle">Sign in to Kaggle</h2>
+    <p class="hint">Wan Studio makes videos on <b>your own</b> free Kaggle GPUs (about 30 hours a week). You need:</p>
+    <ol class="si-steps">
+      <li>A free <a class="link" href="https://www.kaggle.com/account/login?phase=startRegisterTab" target="_blank" rel="noopener">Kaggle account</a>
+        with a <b>verified phone number</b> (<a class="link" href="https://www.kaggle.com/settings" target="_blank" rel="noopener">kaggle.com/settings</a> &rarr; Phone verification). Kaggle only gives GPUs to phone-verified accounts.</li>
+      <li>An API token: on <a class="link" href="https://www.kaggle.com/settings" target="_blank" rel="noopener">kaggle.com/settings</a>, in the <b>API</b> section, press <b>Create New Token</b> and copy it.</li>
+    </ol>
+    <label class="lbl" for="siUser">Kaggle username</label>
+    <input id="siUser" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="your-username">
+    <label class="lbl" for="siToken">API token</label>
+    <input id="siToken" type="password" autocomplete="off" spellcheck="false" placeholder="KGAT_…">
+    <p class="hint err-text hidden" id="siErr" role="alert"></p>
+    <p class="hint">The token is kept only on this computer and is used only to start and stop your own Kaggle server.</p>
+    <div class="row end"><button class="btn ghost" id="siLater">Later</button><button class="btn primary" id="siGo">Sign in</button></div>
   </div>
 </div>
 

@@ -17,6 +17,7 @@ async function api(path, opts = {}) {
   const r = await fetch(path, o);
   if (r.status === 401) { location.href = "/login"; throw new Error("login"); }
   const d = await r.json().catch(() => ({}));
+  if (!r.ok && d.signin && typeof showSignIn === "function") showSignIn();
   if (!r.ok) throw new Error(d.error || r.statusText);
   return d;
 }
@@ -66,7 +67,7 @@ document.addEventListener("click", e => { const g = e.target.closest("[data-goto
 async function poll() {
   try {
     S = await api("/api/state");
-    renderTop(); renderJobs(); checkFinished(); renderEstimate();
+    renderTop(); renderJobs(); checkFinished(); renderEstimate(); maybeSignIn();
   } catch (e) { /* offline: keep last state */ }
   setTimeout(poll, document.hidden ? 8000 : 2000);
 }
@@ -140,6 +141,7 @@ $("#powerSwitch").onclick = async () => {
     await api("/api/power", { json: { on: false } });
     toast("Turning off…");
   } else {
+    if (needsSignIn()) return showSignIn();
     await api("/api/power", { json: { on: true } });
     toast("Starting the Kaggle server. It takes about 5 minutes. You can queue videos now.");
   }
@@ -654,6 +656,7 @@ function renderSettings() {
   $("#setAspect").value = st.aspect; $("#setSeconds").value = st.seconds;
   $$("#themeSeg button").forEach(b => b.classList.toggle("on", b.dataset.t === (st.theme || "dark")));
   $("#outDir").textContent = st.output_dir;
+  renderAccount();
   $("#pinShow").textContent = st.pin || "••••";
   $("#lanUrl").textContent = S.lan_url || "Not connected to Wi-Fi";
   if (S.lan_url && window.QRCode && $("#qr").dataset.u !== S.lan_url) {
@@ -664,6 +667,45 @@ function renderSettings() {
     ["AI prompt helper", S.live.llm ? "ready" : "off"], ["Speed", S.rate ? `${((S.rate * 121 * 20 + 175) / 60).toFixed(0)} min per 5 s Standard video` : "not measured yet"],
     ["GPU hours", S.quota ? `${S.quota.used_h.toFixed(1)} used of ${S.quota.total_h}` : "–"]].map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join("");
 }
+
+// ------------------------------------------------------------------ Kaggle sign-in
+let signInLater = false;
+const needsSignIn = () => !!(S && S.local && S.kaggle && !S.kaggle.signed_in);
+function showSignIn() {
+  $("#siErr").classList.add("hidden");
+  $("#signin").classList.remove("hidden");
+  setTimeout(() => ($("#siUser").value ? $("#siToken") : $("#siUser")).focus(), 50);
+}
+function maybeSignIn() { if (needsSignIn() && !signInLater && $("#signin").classList.contains("hidden")) showSignIn(); }
+function renderAccount() {
+  if (!S || !$("#accText")) return;
+  const k = S.kaggle || {};
+  $("#accText").innerHTML = k.signed_in ? `Signed in as <b>${esc(k.user)}</b>. The server runs in your account (<code translate="no">${esc(k.kernel)}</code>).`
+    : "Not signed in. Sign in to turn the Kaggle server on.";
+  $("#signInBtn2").classList.toggle("hidden", !!k.signed_in);
+  $("#signOutBtn").classList.toggle("hidden", k.source !== "app");
+}
+$("#siLater").onclick = () => { signInLater = true; $("#signin").classList.add("hidden"); };
+$("#siGo").onclick = async () => {
+  const username = $("#siUser").value.trim(), token = $("#siToken").value.trim();
+  const err = m => { $("#siErr").textContent = m; $("#siErr").classList.remove("hidden"); };
+  if (!token) return err("Paste your API token from kaggle.com/settings.");
+  $("#siGo").disabled = true; $("#siGo").textContent = "Checking…";
+  try {
+    const r = await api("/api/signin", { json: { username, token } });
+    $("#siToken").value = ""; $("#signin").classList.add("hidden");
+    toast(`Signed in as <b>${esc(r.user)}</b>. Flip the power switch to start your server.`, "good");
+    S = await api("/api/state"); renderTop(); renderSettings();
+  } catch (e) { err(e.message); }
+  finally { $("#siGo").disabled = false; $("#siGo").textContent = "Sign in"; }
+};
+$("#siToken").onkeydown = e => { if (e.key === "Enter") $("#siGo").click(); };
+$("#signInBtn2").onclick = showSignIn;
+$("#signOutBtn").onclick = async () => {
+  if (!await confirmBox("Sign out of Kaggle?", "The token is removed from this computer. Your videos stay.", "Sign out")) return;
+  try { await api("/api/signout", { json: {} }); signInLater = true; toast("Signed out."); S = await api("/api/state"); renderSettings(); renderTop(); }
+  catch (e) { toast(esc(e.message), "bad"); }
+};
 const saveSetting = async d => { await api("/api/settings", { json: d }); S = await api("/api/state"); renderSettings(); renderTop(); };
 $("#setIdle").oninput = () => $("#idleLabel").textContent = $("#setIdle").value + " min";
 $("#setIdle").onchange = () => saveSetting({ idle_min: +$("#setIdle").value });

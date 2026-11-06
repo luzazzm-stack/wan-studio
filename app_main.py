@@ -1,20 +1,28 @@
 """Wan Studio for Windows: the app window (WebView2) plus the local server in one program.
 
-Built into app\\WanStudio\\WanStudio.exe with PyInstaller. Data, keys and the UI files stay in the project folder,
+Developer build (build_app.sh): app\\WanStudio\\WanStudio.exe; data, keys and the UI files stay in the project folder,
 so the app can be updated without rebuilding.
+Public build (build_client.sh + installer/WanStudio.iss): one folder with web/ and kaggle/ next to the exe. Its data
+(Kaggle sign-in, settings, queue, API keys) lives in %LOCALAPPDATA%\\Wan Studio\\data, never next to the exe.
 """
 import ctypes, json, os, sys, threading, time, urllib.request
 
 if getattr(sys, "frozen", False):
-    HOME = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", ".."))
+    EXE_DIR = os.path.dirname(sys.executable)
+    if os.path.isdir(os.path.join(EXE_DIR, "web")):          # public build (installed or portable)
+        HOME = EXE_DIR
+        os.environ.setdefault("WAN_STUDIO_DATA", os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"), "Wan Studio", "data"))
+    else:
+        HOME = os.path.abspath(os.path.join(EXE_DIR, "..", ".."))
 else:
     HOME = os.path.dirname(os.path.abspath(__file__))
 os.environ["WAN_STUDIO_HOME"] = HOME
-os.makedirs(os.path.join(HOME, "data"), exist_ok=True)
-sys.stdout = sys.stderr = open(os.path.join(HOME, "data", "app.log"), "a", buffering=1, encoding="utf-8")
+DATA = os.environ.get("WAN_STUDIO_DATA") or os.path.join(HOME, "data")
+os.makedirs(DATA, exist_ok=True)
+sys.stdout = sys.stderr = open(os.path.join(DATA, "app.log"), "a", buffering=1, encoding="utf-8")
 sys.path.insert(0, HOME)
 
-URL = "http://127.0.0.1:8765"
+URL = "http://127.0.0.1:" + os.environ.get("WAN_STUDIO_PORT", "8765")
 
 
 def server_up():

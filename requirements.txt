@@ -1,0 +1,4 @@
+aiohttp
+kaggle
+pywebview
+pyinstaller

@@ -7,9 +7,13 @@ import asyncio, json, os, random, re, secrets, socket, sys, time, uuid
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.environ.get("WAN_STUDIO_HOME") or os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(HERE, "data")
+# The installed Windows app sets WAN_STUDIO_DATA (%LOCALAPPDATA%\Wan Studio\data): sign-in, settings, queue, API keys
+# and demo videos then live outside the program folder, so updates and uninstalls never touch them.
+PUBLIC = bool(os.environ.get("WAN_STUDIO_DATA"))
+DATA = os.environ.get("WAN_STUDIO_DATA") or os.path.join(HERE, "data")
 WEB = os.path.join(HERE, "web")
-DEMOS = os.path.join(HERE, "demos")
+DEMOS = os.path.join(DATA, "demos") if PUBLIC else os.path.join(HERE, "demos")
+KEYS = os.path.join(DATA, "keys") if PUBLIC else os.path.join(HERE, "keys")
 UPLOADS = os.path.join(DATA, "uploads")
 THUMBS = os.path.join(DATA, "thumbs")
 ENHANCE = os.path.join(DATA, "enhance")
@@ -21,9 +25,9 @@ if sys.executable.lower().endswith("pythonw.exe") or not sys.stdout:
 
 import aiohttp  # noqa: E402
 from aiohttp import web  # noqa: E402
-import kaggle_ctl  # noqa: E402
+import kaggle_ctl  # noqa: E402  (sign-in: reads the Kaggle account from the data folder)
 
-PORT = 8765
+PORT = int(os.environ.get("WAN_STUDIO_PORT", "8765"))
 POOL = ThreadPoolExecutor(4)
 SIZES = {"16:9": (1280, 704), "9:16": (704, 1280), "1:1": (960, 960)}
 # FastWan distillation LoRA for Wan 2.2 5B: few steps, no CFG.
@@ -101,7 +105,15 @@ def lib_by_id(lid):
 # ------------------------------------------------------------------ poster images
 # A still frame per video, so pages show pictures without loading (and decoding) dozens of videos.
 import shutil, subprocess  # noqa: E402
-FFMPEG = shutil.which("ffmpeg") or os.path.join(os.environ.get("LOCALAPPDATA", ""), "Microsoft", "WinGet", "Links", "ffmpeg.exe")
+FFMPEG = (shutil.which("ffmpeg") or next((p for p in (os.path.join(HERE, "ffmpeg", "ffmpeg.exe"),
+           os.path.join(os.environ.get("LOCALAPPDATA", ""), "Microsoft", "WinGet", "Links", "ffmpeg.exe")) if os.path.exists(p)),
+           os.path.join(os.environ.get("LOCALAPPDATA", ""), "Microsoft", "WinGet", "Links", "ffmpeg.exe")))
+NEED_FFMPEG = ("This needs FFmpeg (free). Open PowerShell, run: winget install Gyan.FFmpeg  "
+               "then close and reopen Wan Studio.")
+
+
+def ffmpeg_ok():
+    return os.path.exists(FFMPEG)
 
 
 def make_thumb(src, dst):
@@ -742,6 +754,8 @@ def lan_ip():
 
 
 async def get_quota():
+    if not kaggle_ctl.signed_in():
+        return None
     if time.time() - quota_cache["t"] > 300:
         try:
             quota_cache["v"] = await blocking(kaggle_ctl.quota)
@@ -776,11 +790,16 @@ async def api_state(req):
         "settings": {k: v for k, v in settings.items() if k != "pin" or is_local(req)},
         "lan_url": f"http://{ip}:{PORT}" if ip else None, "local": is_local(req),
         "rate": stats.get("rate"),
+        "kaggle": {"user": kaggle_ctl.USER, "kernel": kaggle_ctl.KERNEL, "signed_in": kaggle_ctl.signed_in(),
+                   "source": kaggle_ctl.SOURCE},
+        "ffmpeg": ffmpeg_ok(),
     })
 
 
 async def api_power(req):
     d = await req.json()
+    if d.get("on") and not kaggle_ctl.signed_in():
+        return web.json_response({"error": "Sign in to Kaggle first", "signin": True}, status=409)
     if d.get("on"):
         asyncio.create_task(power_on())
     else:
@@ -822,6 +841,8 @@ async def api_generate(req):
 
 
 async def api_animate(req):
+    if not ffmpeg_ok():
+        return web.json_response({"error": NEED_FFMPEG, "ffmpeg": False}, status=400)
     d = await req.json()
     img, vid = os.path.basename(d.get("image") or ""), os.path.basename(d.get("video") or "")
     if not img or not os.path.exists(os.path.join(UPLOADS, img)):
@@ -993,6 +1014,8 @@ def enhance_targets(info):
 
 
 async def api_upload_video(req):
+    if not ffmpeg_ok():
+        return web.json_response({"error": NEED_FFMPEG, "ffmpeg": False}, status=400)
     reader = await req.multipart()
     part = await reader.next()
     ext = os.path.splitext(part.filename or "")[1].lower()
@@ -1033,6 +1056,8 @@ def split_video(src, gdir, ww, wh, fps, seg_seconds):
 
 
 async def api_enhance(req):
+    if not ffmpeg_ok():
+        return web.json_response({"error": NEED_FFMPEG, "ffmpeg": False}, status=400)
     d = await req.json()
     name = os.path.basename(d.get("name") or "")
     src = os.path.join(UPLOADS, name)
@@ -1169,7 +1194,7 @@ llm_budget = load("llm_budget.json", {})     # {"day": "YYYY-MM-DD", "openrouter
 
 def llm_key(provider):
     try:
-        return open(os.path.join(HERE, "keys", f"{provider}.txt"), encoding="utf-8").read().strip()
+        return open(os.path.join(KEYS, f"{provider}.txt"), encoding="utf-8").read().strip()
     except OSError:
         return None
 
@@ -1324,12 +1349,11 @@ KEY_PROVIDERS = {
     "gemini": {"label": "Gemini (paid key)", "used": "Improve my prompt (backup, max 30 a day)"},
     "nvidia": {"label": "NVIDIA", "used": "Make a picture first, Suggest motion, Caption & hashtags"},
     "openrouter": {"label": "OpenRouter", "used": "Not used right now"},
-    "kaggle_luzamhjo_access_token": {"label": "Kaggle (luzamhjo)", "used": "Runs the video server. Restart the app after changing it"},
-}
+}   # the Kaggle account is not an API key here: it is set on the sign-in page (Settings -> Kaggle account)
 
 
 def key_path(provider):
-    return os.path.join(HERE, "keys", f"{provider}.txt")
+    return os.path.join(KEYS, f"{provider}.txt")
 
 
 def mask(k):
@@ -1402,8 +1426,7 @@ async def api_keys_test(req):
                     raise RuntimeError(f"HTTP {r.status}: {(await r.text())[:120]}")
                 msg = "Works"
         else:
-            q = await blocking(kaggle_ctl.quota)
-            msg = f"Works: {q['total_h'] - q['used_h']:.1f} of {q['total_h']:.0f} GPU hours left this week"
+            return web.json_response({"ok": False, "message": "Unknown service"})
         return web.json_response({"ok": True, "message": f"{msg} ({time.time() - t0:.1f} s)"})
     except Exception as e:
         return web.json_response({"ok": False, "message": str(e)[:200]})
@@ -1497,6 +1520,8 @@ async def api_suggest_motion(req):
     path = os.path.join(UPLOADS, os.path.basename(d.get("image") or ""))
     if not d.get("image") or not os.path.exists(path):
         return web.json_response({"error": "Choose a photo first"}, status=400)
+    if not ffmpeg_ok():
+        return web.json_response({"error": NEED_FFMPEG, "ffmpeg": False}, status=400)
     b64 = await blocking(small_jpeg_b64, path)
     idea = (d.get("prompt") or "").strip()
     ask = ("This photo is the first frame of a short video clip. Describe 3 different ways the scene could move in the next 5 seconds "
@@ -1576,6 +1601,40 @@ async def api_demos(req):
     return web.json_response(sorted(f[:-4] for f in os.listdir(DEMOS) if f.endswith(".mp4")))
 
 
+async def api_signin(req):
+    """The sign-in page (this computer only): checks the token with Kaggle, then keeps it in the data folder."""
+    if not is_local(req):
+        return web.json_response({"error": "Sign in on the computer"}, status=403)
+    d = await req.json()
+    try:
+        user, token = await blocking(kaggle_ctl.check_token, str(d.get("username") or ""), str(d.get("token") or ""))
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=400)
+    except Exception as e:
+        return web.json_response({"error": f"Could not reach Kaggle: {e}"}, status=502)
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]{1,80}", user):
+        return web.json_response({"error": "That username looks wrong"}, status=400)
+    settings["kaggle_user"] = user
+    save("settings.json", settings)
+    kaggle_ctl.save_sign_in(user, token)
+    quota_cache.update(t=0, v=None)
+    log("signed in to Kaggle as", user)
+    return web.json_response({"ok": True, "user": user})
+
+
+async def api_signout(req):
+    if not is_local(req):
+        return web.json_response({"error": "Sign out on the computer"}, status=403)
+    if state["power"] in ("starting", "ready", "stopping"):
+        return web.json_response({"error": "Turn the server off first"}, status=409)
+    settings.pop("kaggle_user", None)
+    save("settings.json", settings)
+    kaggle_ctl.sign_out()
+    quota_cache.update(t=0, v=None)
+    log("signed out of Kaggle")
+    return web.json_response({"ok": True})
+
+
 show_window = None  # set by app_main.py when running as the Windows app
 
 
@@ -1626,7 +1685,7 @@ async def on_start(app):
     asyncio.get_running_loop().run_in_executor(POOL, make_all_thumbs)
     asyncio.create_task(power_loop())
     asyncio.create_task(scheduler_loop())
-    log(f"Wan Studio on http://localhost:{PORT}  (LAN: {lan_ip()}:{PORT})  power={state['power']}")
+    log(f"Wan Studio on http://localhost:{PORT}  (LAN: {lan_ip()}:{PORT})  power={state['power']}  kernel={kaggle_ctl.KERNEL}")
 
 
 def make_app():
@@ -1644,6 +1703,7 @@ def make_app():
         web.post("/api/social-kit", api_social_kit),
         web.post("/api/upload-video", api_upload_video), web.post("/api/enhance", api_enhance),
         web.post("/api/settings", api_settings),
+        web.post("/api/signin", api_signin), web.post("/api/signout", api_signout),
         web.get("/api/keys", api_keys_list), web.post("/api/keys", api_keys_save),
         web.delete("/api/keys/{provider}", api_keys_delete), web.post("/api/keys/{provider}/test", api_keys_test), web.get("/api/demos", api_demos),
         web.post("/api/open-folder", api_open_folder), web.post("/api/show", api_show),
