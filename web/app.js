@@ -2,7 +2,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const QUALITY = { turbo: { steps: 6, cfg: 1, label: "Turbo" }, standard: { steps: 20, label: "Standard" }, high: { steps: 30, label: "High" } };
+const QUALITY = { turbo: { steps: 6, cfg: 1, label: "Turbo" }, quality: { steps: 10, cfg: 1, label: "Quality" }, standard: { steps: 20, label: "Standard" }, high: { steps: 30, label: "High" } };
 
 let S = null;                 // last /api/state
 let library = [];
@@ -43,7 +43,7 @@ const frames = sec => sec * 24 + 1;
 function estimate(p) {
   const rate = (S && S.rate) || 0.55;
   const q = QUALITY[p.quality] || QUALITY.standard;
-  const eff = q.steps * (p.quality === "turbo" ? 0.9 : 1);
+  const eff = q.steps * (q.cfg === 1 ? 0.9 : 1);
   return rate * frames(p.seconds) * eff + 30 + 1.2 * frames(p.seconds);
 }
 
@@ -263,7 +263,11 @@ $$("#aspects button").forEach(b => b.onclick = () => setAspect(b.dataset.a));
 function setAspect(a) { form.aspect = a; $$("#aspects button").forEach(x => x.classList.toggle("on", x.dataset.a === a)); renderEstimate(); }
 $("#seconds").oninput = () => { $("#secLabel").textContent = $("#seconds").value + " s"; renderEstimate(); };
 $$("#qualitySeg button").forEach(b => b.onclick = () => setQuality(b.dataset.q));
-function setQuality(q) { form.quality = q; $$("#qualitySeg button").forEach(x => x.classList.toggle("on", x.dataset.q === q)); renderEstimate(); }
+function setQuality(q) {
+  form.quality = q; $$("#qualitySeg button").forEach(x => x.classList.toggle("on", x.dataset.q === q));
+  if (q === "quality" && form.res === "720") $('#resSeg button[data-r="1080"]').click();   // Quality = 10-step Turbo + 1080p (~18 min)
+  renderEstimate();
+}
 $$("#resSeg button").forEach(b => b.onclick = () => {
   form.res = b.dataset.r; $$("#resSeg button").forEach(x => x.classList.toggle("on", x === b));
   $("#resHint").textContent = { "720": "720p is what Wan makes", "1080": "made at 720p, then sharpened to 1080p (+6 min)", "1080s": "1080p, plus doubled frames for smoother motion (+8 min)" }[form.res];
@@ -622,16 +626,17 @@ function openViewer(id) {
   $("#vSmooth").disabled = (cur.fps || 24) > 24;
   $("#viewer").classList.remove("hidden");
 }
+const qualityOf = v => QUALITY[v.quality] ? v.quality : v.steps <= 8 ? "turbo" : v.steps >= 30 ? "high" : "standard";
 $("#vFav").onclick = async () => { cur.favorite = !cur.favorite; await api("/api/library/" + cur.id, { json: { favorite: cur.favorite } }); $("#vFav").textContent = cur.favorite ? "Remove from favourites" : "Add to favourites"; renderGallery(); };
 $("#vReuse").onclick = () => {
   promptEl.value = cur.prompt || ""; setAspect(cur.aspect || "16:9"); $("#seconds").value = cur.seconds || 5; $("#seconds").oninput();
   $("#seed").value = cur.seed ?? ""; if (cur.negative) $("#negative").value = cur.negative;
-  setQuality(cur.steps <= 8 ? "turbo" : cur.steps >= 30 ? "high" : "standard");
+  setQuality(qualityOf(cur));
   $("#viewer").classList.add("hidden"); $("#vVideo").pause(); analyze(); go("create");
   toast("Settings loaded, including the seed. Change one thing and generate.");
 };
 $("#vVariations").onclick = async () => {
-  const q = cur.steps <= 8 ? "turbo" : cur.steps >= 30 ? "high" : "standard";
+  const q = qualityOf(cur);
   const r = await api("/api/generate", { json: { prompt: cur.prompt, negative: cur.negative, aspect: cur.aspect, seconds: cur.seconds, quality: q,
     steps: cur.steps, cfg: cur.cfg, seed: -1, two: true, image: cur.image, template: cur.template } });
   toast("2 variations added to the queue", "good");

@@ -32,7 +32,9 @@ POOL = ThreadPoolExecutor(4)
 SIZES = {"16:9": (1280, 704), "9:16": (704, 1280), "1:1": (960, 960)}
 # FastWan distillation LoRA for Wan 2.2 5B: few steps, no CFG.
 TURBO = {"lora": "Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors", "steps": 6, "strength": 1.0, "sampler": "euler"}
-QUALITY_STEPS = {"turbo": TURBO["steps"], "standard": 20, "high": 30}
+# "quality" = FastWan LoRA at 10 steps: about 12 min for a 5 s 720p clip on a T4 (plus ~6 min for 1080p)
+QUALITY_STEPS = {"turbo": TURBO["steps"], "quality": 10, "standard": 20, "high": 30}
+LORA_MODES = ("turbo", "quality")
 UPSCALED = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080)}
 
 
@@ -138,7 +140,7 @@ def make_all_thumbs():
 def wf_generate(p, prefix, image_name=None):
     w, h = SIZES[p["aspect"]]
     frames = int(p["seconds"]) * 24 + 1
-    turbo = p.get("quality") == "turbo"
+    turbo = p.get("quality") in LORA_MODES
     wf = {
         "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "wan2.2_ti2v_5B_fp16.safetensors", "weight_dtype": "default"}},
         "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "type": "wan", "device": "default"}},
@@ -156,7 +158,7 @@ def wf_generate(p, prefix, image_name=None):
     }
     if turbo:
         wf["14"] = {"class_type": "LoraLoaderModelOnly", "inputs": {"model": ["1", 0], "lora_name": TURBO["lora"], "strength_model": TURBO["strength"]}}
-        wf["8"]["inputs"].update(steps=TURBO["steps"], cfg=1.0)
+        wf["8"]["inputs"].update(steps=QUALITY_STEPS[p["quality"]], cfg=1.0)
     if image_name:
         wf["12"] = {"class_type": "LoadImage", "inputs": {"image": image_name}}
         wf["13"] = {"class_type": "ImageScale", "inputs": {"image": ["12", 0], "upscale_method": "lanczos", "width": w, "height": h, "crop": "center"}}
@@ -469,7 +471,7 @@ async def power_tick():
 # ------------------------------------------------------------------ job scheduler
 def eff_steps(p):
     # CFG 1 (turbo) skips the negative pass, so each step costs about half.
-    return int(p["steps"]) * (0.9 if p.get("quality") == "turbo" else 1)
+    return int(p["steps"]) * (0.9 if p.get("quality") in LORA_MODES else 1)
 
 
 def overhead(frames):
@@ -827,7 +829,7 @@ async def api_generate(req):
             "cfg": float(d.get("cfg", settings["cfg"])), "template": d.get("template"), "image": d.get("image"), "demo": d.get("demo"),
             "upscale": bool(d.get("upscale")), "smooth": bool(d.get("smooth"))}
     base["steps"] = QUALITY_STEPS[base["quality"]]
-    if base["quality"] == "turbo":
+    if base["quality"] in LORA_MODES:
         base["cfg"] = 1.0
     count = 2 if d.get("two") else 1
     seed = int(d.get("seed", -1))
