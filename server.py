@@ -485,7 +485,7 @@ def estimate_seconds(j):
     if k == "enhance":
         return int(p.get("frames", 84) * ((3.1 * p.get("mp", 0.9) if p.get("upscale") else 0) + (0.35 if p.get("smooth") else 0)) + 40)
     if k in ("upscale", "interp"):
-        return 340 if k == "upscale" else 60
+        return 1030 if k == "upscale" else 60
     if k == "animate":
         return 240 + 15.6 * anim_frames(p["seconds"])       # measured on T4: 5 s (81 frames) took 1511 s
     rate = stats.get("rate") or 0.55

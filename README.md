@@ -55,5 +55,5 @@ Phone: same Wi-Fi, open the address shown in **Settings → Open on your phone**
 ## Speed (measured on 2× T4)
 - Standard 720p, 5 s: about 23 min. 3 s: about 10 min. Two videos run at once.
 - Turbo (FastWan LoRA, 6 steps, no CFG): a few minutes.
-- Quality (FastWan LoRA, 10 steps, no CFG): about 12 min for a 5 s 720p clip on a T4; the app also picks 1080p for it (about 18 min in total).
+- Quality (FastWan LoRA, 10 steps, no CFG): about 10-12 min for a 5 s 720p clip on a T4; 1080p upscale adds about 17 min.
 - Upscale to 1080p (Real-ESRGAN x2), Smooth (RIFE 2×).

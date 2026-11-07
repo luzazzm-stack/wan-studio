@@ -265,12 +265,11 @@ $("#seconds").oninput = () => { $("#secLabel").textContent = $("#seconds").value
 $$("#qualitySeg button").forEach(b => b.onclick = () => setQuality(b.dataset.q));
 function setQuality(q) {
   form.quality = q; $$("#qualitySeg button").forEach(x => x.classList.toggle("on", x.dataset.q === q));
-  if (q === "quality" && form.res === "720") $('#resSeg button[data-r="1080"]').click();   // Quality = 10-step Turbo + 1080p (~18 min)
   renderEstimate();
 }
 $$("#resSeg button").forEach(b => b.onclick = () => {
   form.res = b.dataset.r; $$("#resSeg button").forEach(x => x.classList.toggle("on", x === b));
-  $("#resHint").textContent = { "720": "720p is what Wan makes", "1080": "made at 720p, then sharpened to 1080p (+6 min)", "1080s": "1080p, plus doubled frames for smoother motion (+8 min)" }[form.res];
+  $("#resHint").textContent = { "720": "720p is what Wan makes", "1080": "made at 720p, then sharpened to 1080p (+about 17 min for 5 s)", "1080s": "1080p, plus doubled frames for smoother motion (+8 min)" }[form.res];
   renderEstimate();
 });
 $("#cfg").oninput = () => $("#cfgLabel").textContent = (+$("#cfg").value).toFixed(1);
@@ -495,7 +494,7 @@ function renderEstimate() {
   const p = currentParams();
   const one = estimate(p);
   const queued = S.jobs.filter(j => ["queued", "uploading", "running"].includes(j.status)).length;
-  const extra = (p.upscale ? 340 : 0) + (p.smooth ? 150 : 0);
+  const extra = (p.upscale ? Math.round(8.5 * frames(p.seconds)) : 0) + (p.smooth ? 150 : 0);
   let txt = `About <b>${fmtMin(one + extra)}</b> per video` + (extra ? ` (${fmtMin(one)} to make it, ${fmtMin(extra)} to upscale${p.smooth ? " and smooth" : ""})` : "");
   if (p.two) txt += ", 2 versions at once";
   if (queued) txt += `. ${queued} ${queued === 1 ? "job" : "jobs"} ahead`;
